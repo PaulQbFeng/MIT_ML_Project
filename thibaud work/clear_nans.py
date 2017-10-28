@@ -20,3 +20,13 @@ def replace_nans_with_most_frequent(arr, nan=-999):
         copy[:,d][copy[:,d] == nan] = unique[np.argmax(counts[unique != nan])]
         
     return copy
+
+def replace_nans_with_median(arr, nan=-999):
+    '''Creates a copy and replaces the nan values by the median (without thos nan values) in the column'''
+    N, D = arr.shape
+    copy = arr.copy()
+    
+    for d in range(D):
+        copy[:,d][copy[:,d] == nan] = np.median(arr[:,d][arr[:,d] != nan])
+        
+    return copy
