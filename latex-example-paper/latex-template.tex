@@ -2,6 +2,8 @@
 
 \usepackage{hyperref}
 \usepackage{graphicx}	% For figure environment
+\usepackage{float}
+\usepackage{multicol}
 
 \begin{document}
 \title{Machine Learning on Higgs Boson Dataset}
@@ -21,271 +23,94 @@ The report go through differents prediction algorithms comparing their performan
 
 \section{Introduction}
 
-The 4\textsuperscript{th} july 2012, CERN annonced they discovered the existence of a new elementary particle : Higgs Boson. The existence of this elementary particle introduced in 1964 have been searched actively during approximetly 50 years, to complete the Standard Model of physics.\\  
-To Predict the existence of this elementary particle, a lot of colision of particule have been ran in CERN particle accelerator producing smaller and instable particles like Higgs boson. They emit a singular signal that can be catch and save with high accuracy sensors.\\
-Our goal is to detect the Higgs Boson, and recognize it signature to gives an accurate prediction if it have been created temporary given the data set of a colision. To achive this, a linear regression or classification algorithm is trained on a CERN particle accelerator (where prediction is given) dataset that confirm Higgs Boson signature or not during a colision.\\
+The 4\textsuperscript{th} july 2012, CERN announced they discovered the existence of a new elementary particle : Higgs Boson. The existence of this elementary particle introduced in 1964 have been searched actively during approximetly 50 years, to complete the Standard Model of physics.\\  
+To predict the existence of this elementary particle, a lot of collision of particules have been run in CERN particle accelerators producing smaller and instable particles like Higgs boson. They emit a singular signal that can be caught and saved with high accuracy sensors.\\
+Our goal is to detect the Higgs Boson, and recognize its signature to give an accurate prediction if it have been created temporary given the data set of a collision. To achive this, a linear regression or classification algorithm is trained on a CERN particle accelerator (where prediction is given) dataset that confirm Higgs Boson signature or not during a colision.\\
 
-\section{Models and Methodsr}
+\section{Models and Methods}
+\subsection{Prediction algorithms implemented}
 \label{sec:structure-paper}
 
-Scientific papers usually begin with the description of the problem,
-justifying why the problem is interesting. Most importantly, it argues
-that the problem is still unsolved, or that the current solutions are
-unsatisfactory. This leads to the main gist of the paper, which is
-``the idea''. The authors then show evidence, using derivations or
-experiments, that the idea works. Since science does not occur in a
-vacuum, a proper comparison to the current state of the art is often
-part of the results. Following these ideas, papers usually have the
-following structure:
-\begin{description}
-\item[Abstract] \ \\
-  Short description of the whole paper, to help the
-  reader decide whether to read it.
-\item[Introduction] \ \\
-  Describe your problem and state your
-  contributions.
-\item[Models and Methods] \ \\
-  Describe your idea and how it was implemented to solve
-  the problem. Survey the related work, giving credit where credit is
-  due.
-\item[Results] \ \\
-  Show evidence to support your claims made in the
-  introduction.
-\item[Discussion] \ \\
-  Discuss the strengths and weaknesses of your
-  approach, based on the results. Point out the implications of your
-  novel idea on the application concerned.
-\item[Summary] \ \\
-  Summarize your contributions in light of the new
-  results.
-\end{description}
+To try to solve this problem, we implemented, tested and improved 3 algorithm :\\ \\
+\textbf{Least squares} \\
+Least squares is one of the best linear regression tool to resolve the problem given cause it is really efficient, easy to implement and there is no parameter to set. So it's the perfect algorithm to dive into the problem and set a first good prediction. Nevertheless it can gives bad results cause it easly overfits when we build polynomial from our input. The lack of parameters results in a lack of control of the quality of the prediction.\\ \\
+\textbf{Logistic regression} \\
+ Logistic regression is a classification algorithm so it seems more appropriate to solve our problem at first look. However it's quite slow to run because it compute at each step a gradient and a loss. It also have the disadvantage to be very fragile, because if you have high values (by putting some input data at high degree) the exponential of the logistic function rapidly gives overflow.\\  \\
+\textbf{Ridge regression} \\
+  Last but not least ridge regression.This algorithm is a variant of least squares but it has the benfit to penalize overfit with a lambda parameter, so it's more robust to greater degree of polynomial basis vectors. It also keep the advantages of least squares such as fast execution. The downside of ridge regression is actualy that a lambda have to be choosed to gives us a good prediction and it isn't a simple task, in addition at first look this algorithm isn't really done for classification.\\ \\
+
+Let's prove with examples some points we admited previously.\\ First let's prove that least square may overfit data. To prove this we build an augmented feature vector by adding polynomial basis up to degree 20. We split our dataset in two so we are able to train on the first part and test on second part (for this example we took a split the dataset in 2). To set the lambda, we performed a grid search over lambdas values (we found as one of best lamda=0.008).\\
+\begin{table}[h]
+\centering
+\caption{Comparation of prediction for regression algorithms}
+\label{my-label}
+\begin{tabular}{|l|l|l|l|}
+\hline
+                 & Least squares & Ridge regression \\ \hline
+Prediction ratio & 0.56          & 0.64            \\ \hline
+\end{tabular}
+\end{table}
+\\So we pointed out that ridge regression is more accurate dealing with high degree for augmented feature vector (so more complex data vector).\\
+Second we show that without data preprocessing (like -999 entries etc...) the most natural algorithm for binary prediction, logistic regression have the lead.
+We set the different parameters to max iteration for logistic regression equal 10 000, gamma for logistic regression equal 1e-6 and lambda for ridge regression is equal to 3e-15. For this example, we set the split ratio to 0.8, so 80\% of the data goes for training and the other 20\% for testing.\\
+\begin{table}[h]
+\centering
+\caption{Comparation of prediction without data preprocessing}
+\label{my-label}
+\begin{tabular}{|l|l|l|l|}
+\hline
+                 & Least squares & Ridge regression & Logistic regression \\ \hline
+Prediction ratio & 0.703         & 0.706            & 0.797               \\ \hline
+\end{tabular}
+\end{table}
+\\This was our first output and we thought it would be clearly worse to more focus on logistic regression.\\
+But the more we progressed the more we have seen it's inconvenients, cross validations were time consuming and barely relevant because of the  overflow encountered. The choice of the degree and gamma were taken at the edge of the overflow, ensuring a compromise between speed of the computation and robustness.
+We finally turned back to ridge regression for more stability.\\
+We didn't tried gradient descent cause it has same problem than logistic regression: it was too slow. In addition it has wasn't in first hand for classification so we kept it out of our research.\\
+
+\subsection{Preprocess of input data}
+We did some analysis on the data because we saw that going blindly would only get us so far. The 23\textsuperscript{rd} column of the data is a column which only contains integer values ranging from 0 to 3. Reading on the document explaining how they got the values, we learnt that these values represented the number of jets that were created when two particles collide. This meant that our data could be categorized into 4 different data sets, one for each value of number of jets. 
+Some more analysis revealed that the nan-values were clearly dependent on the category the data was in. We tried looking at the percentage of nan values per column per category and got these results:\\
+
+\begin{multicols}{4}
+0 jet\\
+    0 :  26 \%\\
+    4 : 100 \%\\
+    5 : 100 \%\\
+    6 : 100 \%\\
+   12 : 100 \%\\
+   23 : 100 \%\\
+   24 : 100 \%\\
+   25 : 100 \%\\
+   26 : 100 \%\\
+   27 : 100 \%\\
+   28 : 100 \%\\
+\columnbreak
+\\1 jets\\
+    0 :   9 \%\\
+    4 : 100 \%\\
+    5 : 100 \%\\
+    6 : 100 \%\\
+   12 : 100 \%\\
+   26 : 100 \%\\
+   27 : 100 \%\\
+   28 : 100 \%\\
+\columnbreak
+\\2 jets\\
+    0 :   5 \%\\
+\columnbreak
+\\3 jets\\
+    0 :   6 \%\\
+\end{multicols}
+
+Therefore, we could simply remove the column full of nans for jet 0 and 1, and treat the nan differently for the column 0 in all category. We tried replacing the nan values by the mean, the median and the most frequent values, but we saw that keeping the median was the most efficient technique. We also remarked that last column for jet 0 is always 0, so we removed it since we did not have use of that.\\
+
+\subsection{Final submissions}
+Once we knew how to treat the data, we could do some cross validation. We separated the data into training and testing data using a ratio that is similar to the ratio of the given data to the prediction data (~0.3). We then build a polynomial matrix for the training data, and run Ridge regression. The goal was to find the optimal degree for the polynomial matrix and the optimal lambda for the Ridge regression. We do all this a high number of times with different training and testing data each time. The way we decide we would select the “best” models was by choosing the lowest RMSE for the testing data, or the best prediction we did for the testing part. The RMSE for different degree is not really usable since its explodes when we go into bigger degrees. This way, we learnt the optimal weights with the training data and used this to try and predict the testing data.\\
 
 
-\section{Tips for Good Writing}
-\label{sec:tips-writing}
-
-The ideas for good writing have come
-from~\cite{editor10,jones08,anderson04}.
-
-\subsection{Getting Help}
-One should try to get a draft read by as many friendly people as
-possible. And remember to treat your test readers with respect. If
-they are unable to understand something in your paper, then it is
-highly likely that your reviewers will not understand it
-either. Therefore, do not be defensive about the criticisms you get,
-but use it as an opportunity to improve the paper. Before your submit
-your friends to the pain of reading your draft, please \emph{use a
-  spell checker}.
-
-\subsection{Abstract}
-The abstract should really be written last, along with the title of
-the paper. The four points that should be covered~\cite{jones08}:
-\begin{enumerate}
-\item State the problem.
-\item Say why it is an interesting problem.
-\item Say what your solution achieves.
-\item Say what follows from your solution.
-\end{enumerate}
-
-\subsection{Figures and Tables}
-
-\begin{figure}[tbp]
-  \centering
-  \includegraphics[width=\columnwidth]{denoised_signal_1d}
-  \caption{Signal compression and denoising using the Fourier basis.}
-  \vspace{-3mm}
-  \label{fig:denoise-fourier}
-\end{figure}
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\columnwidth]{local_wdenoised_1d}
-  \vspace{-3mm}
-  \caption{Signal compression and denoising using the Daubechies wavelet basis.}
-  \label{fig:denoise-wavelet}
-\end{figure}
-
-Use examples and illustrations to clarify ideas and results. For
-example, by comparing Figure~\ref{fig:denoise-fourier} and
-Figure~\ref{fig:denoise-wavelet}, we can see the two different
-situations where Fourier and wavelet basis perform well. 
-
-\subsection{Models and Methods}
-The models and methods
-section should describe what was
-done to answer the research question, describe how it was done,
-justify the experimental design, and
-explain how the results were analyzed.
-
-The model refers to the underlying mathematical model or structure which 
-you use to describe your problem, or that your solution is based on. 
-The methods on the other hand, are the algorithms used to solve the problem. 
-In some cases, the suggested method directly solves the problem, without having it 
-stated in terms of an underlying model. Generally though it is a better practice to have 
-the model figured out and stated clearly, rather than presenting a method without specifying 
-the model. In this case, the method can be more easily evaluated in the task of fitting 
-the given data to the underlying model.
-
-The methods part of this section, is not a step-by-step, directive,
-protocol as you might see in your lab manual, but detailed enough such
-that an interested reader can reproduce your
-work~\cite{anderson04,wavelab}.
-
-The methods section of a research paper provides the information by
-which a study's validity is judged.
-Therefore, it requires a clear and precise description of how an
-experiment was done, and the rationale
-for why specific experimental procedures were chosen.
-It is usually helpful to
-structure the methods section by~\cite{kallet04methods}:
-\begin{enumerate}
-\item Layout the model you used to describe the problem or the solution.
-\item Describing the algorithms used in the study, briefly including
-  details such as hyperparameter values (e.g. thresholds), and
-  preprocessing steps (e.g. normalizing the data to have mean value of
-  zero).
-\item Explaining how the materials were prepared, for example the
-  images used and their resolution.
-\item Describing the research protocol, for example which examples
-  were used for estimating the parameters (training) and which were
-  used for computing performance.
-\item Explaining how measurements were made and what
-  calculations were performed. Do not reproduce the full source code in
-  the paper, but explain the key steps.
-\end{enumerate}
-
-\subsection{Results}
-
-Organize the results section based on the sequence of table and
-figures you include. Prepare the tables and figures as soon as all
-the data are analyzed and arrange them in the sequence that best
-presents your findings in a logical way. A good strategy is to note,
-on a draft of each table or figure, the one or two key results you
-want to address in the text portion of the results.
-The information from the figures is
-summarized in Table~\ref{tab:fourier-wavelet}.
-
-\begin{table*}[htbp]
-  \centering
-  \begin{tabular}[c]{|l||l|l|l|}
-    \hline
-    Basis&Support&Suitable signals&Unsuitable signals\\
-    \hline
-    Fourier&global&sine like&localized\\
-    wavelet&local&localized&sine like\\
-    \hline
-  \end{tabular}
-  \caption{Characteristics of Fourier and wavelet basis.}
-  \label{tab:fourier-wavelet}
-\end{table*}
-
-When reporting computational or measurement results, always
-report the mean (average value) along with a measure of variability
-(standard deviation(s) or standard error of the mean).
-
-
-\section{Tips for Good Software}
-\label{sec:tips-software}
-
-There is a lot of literature (for example~\cite{hunt99pragmatic} and
-\cite{spolsky04software}) on how to write software. It is not the
-intention of this section to replace software engineering
-courses. However, in the interests of reproducible
-research~\cite{schwab00}, there are a few guidelines to make your
-reader happy:
-\begin{itemize}
-\item Have a \texttt{README} file that (at least) describes what your
-  software does, and which commands to run to obtain results. Also
-  mention anything special that needs to be set up, such as
-  toolboxes\footnote{For those who are
-  particularly interested, other common structures can be found at
-  \url{http://en.wikipedia.org/wiki/README} and
-  \url{http://www.gnu.org/software/womb/gnits/}.}.
-\item A list of authors and contributors can be included in a file
-  called \texttt{AUTHORS}, acknowledging any help that you may have
-  obtained. For small projects, this information is often also
-  included in the \texttt{README}.
-\item Use meaningful filenames, and not \texttt{temp1.py},
-  \texttt{temp2.py}. 
-\item Document your code. Each file should at least have a short
-  description about its reason for existence. Non obvious steps in the
-  code should be commented. Functions arguments and return values should be described.
-\item Describe how the results presented in your paper can be reproduced.
-\end{itemize}
-
-
-\subsection{\LaTeX{} Primer}
-\label{sec:latex-primer}
-
-\LaTeX{} is one of the most commonly used document preparation systems
-for scientific journals and conferences. It is based on the idea
-that authors should be able to focus on the content of what they are
-writing without being distracted by its visual presentation.
-The source of this file can be used as a starting point for how to use
-the different commands in \LaTeX{}. We are using an IEEE style for
-this course.
-
-\subsubsection{Installation}
-
-There are various different packages available for processing \LaTeX{}
-documents.
-On OSX use Mac\TeX{}
-(\url{http://www.tug.org/mactex/}). On Windows, use for example Mik\TeX{} (\url{http://miktex.org/}).
-
-\subsubsection{Compiling \LaTeX{}}
-Your directory should contain at least~4 files, in addition to image
-files. Images should be in \texttt{.png}, \texttt{.jpg} or
-\texttt{.pdf} format.
-\begin{itemize}
-\item IEEEtran.cls
-\item IEEEtran.bst
-\item groupXX-submission.tex
-\item groupXX-literature.bib
-\end{itemize}
-Note that you should replace groupXX with your chosen group name.
-Then, from the command line, type:
-\begin{verbatim}
-$ pdflatex groupXX-submission
-$ bibtex groupXX-literature
-$ pdflatex groupXX-submission
-$ pdflatex groupXX-submission
-\end{verbatim}
-This should give you a PDF document \texttt{groupXX-submission.pdf}.
-
-\subsubsection{Equations}
-
-There are three types of equations available: inline equations, for
-example $y=mx + c$, which appear in the text, unnumbered equations
-$$y=mx + c,$$
-which are presented on a line on its own, and numbered equations
-\begin{equation}
-  \label{eq:linear}
-  y = mx + c
-\end{equation}
-which you can refer to at a later point (Equation~(\ref{eq:linear})).
-
-\subsubsection{Tables and Figures}
-
-Tables and figures are ``floating'' objects, which means that the text
-can flow around it.
-Note
-that \texttt{figure*} and \texttt{table*} cause the corresponding
-figure or table to span both columns.
-
-
-
-\section{Summary}
-
-The aim of a scientific paper is to convey the idea or discovery of
-the researcher to the minds of the readers. The associated software
-package provides the relevant details, which are often only briefly
-explained in the paper, such that the research can be reproduced.
-To write good papers, identify your key idea, make your contributions
-explicit, and use examples and illustrations to describe the problems
-and solutions.
-
-\section*{Acknowledgements}
-The author thanks Christian Sigg for his careful reading and helpful
-suggestions.
+\section{Conclusion}
+To conclude, we see that our predictions gives us a pretty good approximation of the real results with 0.811 of right predictions. Although our current place of 115th could be better, we feel like there was a good progression in our understanding of these Machine Learning techniques. The Ridge regression clearly was our best shot because we could pick the best parameters more quickly than with logistic regression. The understanding of the data is also a very important step towards better predictions, because a sophisticated algorithm won’t work as good as it could if the data had been treated specifically.
 
 \bibliographystyle{IEEEtran}
 \bibliography{literature}
